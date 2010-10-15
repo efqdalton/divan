@@ -1,0 +1,11 @@
+teste:
+  host:     http://127.0.0.1
+  port:     12345
+  database: test_db
+  user:     admin
+  password: top1secret2pass
+
+proof_of_concept:
+  host:     http://127.0.0.1
+  port:     5984
+  database: proof_of_concept
