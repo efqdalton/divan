@@ -35,6 +35,7 @@ begin
     gem.email = "dalthon@aluno.ita.br"
     gem.homepage = "http://github.com/efqdalton/divan"
     gem.authors = ["Dalton Pinto"]
+    gem.files.exclude "config"
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError
