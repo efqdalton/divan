@@ -20,7 +20,7 @@ class ViewedModel < Divan::Models::ProofOfConcept
 end
 
 class ProofOfConcept < Divan::Models::ProofOfConcept
-  
+  property :first_name
 end
 
 class TestDivan < Test::Unit::TestCase
@@ -68,10 +68,10 @@ class TestDivan < Test::Unit::TestCase
   end
 
   def test_saving_and_retrieving_simple_document_should_work
-    object = Divan::Models::ProofOfConcept.new :simple_param  => 'Working well!',
-                                               :hashed_params => { :is_a => 'Hash', :hash_size => 2 }
+    object = ProofOfConcept.new :simple_param  => 'Working well!',
+                                :hashed_params => { :is_a => 'Hash', :hash_size => 2 }
     assert object.save
-    retrieved_object = Divan::Models::ProofOfConcept.find object.id
+    retrieved_object = ProofOfConcept.find object.id
     assert retrieved_object
     assert retrieved_object.rev
     assert_equal object.id, retrieved_object.id
@@ -81,16 +81,16 @@ class TestDivan < Test::Unit::TestCase
   end
 
   def test_retrieving_non_existent_document_should_return_nil
-    obj = Divan::Models::ProofOfConcept.find '0'*32 # Probably this uuid don't exists in database
+    obj = ProofOfConcept.find '0'*32 # Probably this uuid don't exists in database
     assert_nil obj
   end  
 
   def test_updating_document
-    object = Divan::Models::ProofOfConcept.new
+    object = ProofOfConcept.new
     object[:hashed_params] = {:is_a => 'Hash', :hash_size => 2}
     object[:simple_param]  = 'Working well!'
     assert object.save
-    retrieved_object = Divan::Models::ProofOfConcept.find object.id
+    retrieved_object = ProofOfConcept.find object.id
     assert retrieved_object
     retrieved_object[:updated_attrib] = 'New attribute!'
     assert retrieved_object.save['ok']
@@ -99,17 +99,17 @@ class TestDivan < Test::Unit::TestCase
   end
 
   def test_retrieving_deleted_object
-    object = Divan::Models::ProofOfConcept.new
+    object = ProofOfConcept.new
     object[:hashed_params] = {:is_a => 'Hash', :hash_size => 2}
     object[:simple_param]  = 'Working well!'
     assert object.save
     assert object.delete
-    retrieved_object = Divan::Models::ProofOfConcept.find object.id
+    retrieved_object = ProofOfConcept.find object.id
     assert_nil retrieved_object
   end
 
   def test_deleting_document_twice
-    object = Divan::Models::ProofOfConcept.new
+    object = ProofOfConcept.new
     object[:hashed_params] = {:is_a => 'Hash', :hash_size => 2}
     object[:simple_param]  = 'Working well!'
     assert object.save
@@ -118,7 +118,7 @@ class TestDivan < Test::Unit::TestCase
   end
 
   def test_save_deleted_document
-    object = Divan::Models::ProofOfConcept.new
+    object = ProofOfConcept.new
     object[:hashed_params] = {:is_a => 'Hash', :hash_size => 2}
     object[:simple_param]  = 'Working well!'
     assert object.save
@@ -128,25 +128,26 @@ class TestDivan < Test::Unit::TestCase
   end
 
   def test_delete_all_from_database
-    assert Divan::Models::ProofOfConcept.delete_all
+    assert ProofOfConcept.delete_all
     10.times do |n|
-      assert Divan::Models::ProofOfConcept.new( :value => n ).save
+      assert ProofOfConcept.new( :value => n ).save
     end
+    # assert_equal Divan[:proof_of_concept].views.count, 5
     assert Divan[:proof_of_concept].create_views
-    assert_equal Divan::Models::ProofOfConcept.delete_all(:limit => 6), 6
-    assert_equal Divan::Models::ProofOfConcept.all.first.class, Divan::Models::ProofOfConcept
-    assert_equal Divan::Models::ProofOfConcept.delete_all, 4
-    assert Divan::Models::ProofOfConcept.find('_design/proof_of_concept')
-    assert_equal Divan::Models::ProofOfConcept.all.count, 0
+    assert_equal ProofOfConcept.delete_all(:limit => 6), 6
+    assert_equal ProofOfConcept.all.first.class, ProofOfConcept
+    assert_equal ProofOfConcept.delete_all, 4
+    assert ProofOfConcept.find('_design/proof_of_concept')
+    assert_equal ProofOfConcept.all.count, 0
   end
 
   def test_bulk_create
-    assert Divan::Models::ProofOfConcept.delete_all
+    assert ProofOfConcept.delete_all
     params = 10.times.map do |n|
       {:number => n, :double => 2*n}
     end
-    assert Divan::Models::ProofOfConcept.create params
-    assert_equal Divan::Models::ProofOfConcept.delete_all, 10
+    assert ProofOfConcept.create params
+    assert_equal ProofOfConcept.delete_all, 10
   end
 
   def test_perform_view_by_query
@@ -160,6 +161,7 @@ class TestDivan < Test::Unit::TestCase
     assert obj
     assert_equal obj.mod, 1
     assert_equal ViewedModel.all_by_mod(0).count, 5
+    assert_equal ViewedModel.find_all.count, 10
     assert_equal ViewedModel.delete_all, 10
   end
 
@@ -170,9 +172,15 @@ class TestDivan < Test::Unit::TestCase
   end
 
   def test_dynamic_access_to_attributes
-    object = Divan::Models::ProofOfConcept.new :dynamic_attribute => 'Working'
+    object = ProofOfConcept.new :dynamic_attribute => 'Working'
     assert object.dynamic_attribute, 'Working'
     assert_equal( (object.dynamic_setter = "Well"), 'Well')
     assert_equal object.dynamic_setter, 'Well'
+  end
+
+  def test_setting_properties
+    object = ProofOfConcept.new
+    assert_nil object.first_name
+    assert_raise(NoMethodError){ object.last_name }
   end
 end

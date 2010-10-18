@@ -1,6 +1,6 @@
 module Divan
   module Models
-    class Base < Divan::Base
+    class Base
 
       def save
         self.class.execute_before_validate_callback(self) or return false
@@ -113,6 +113,7 @@ module Divan
           payload = { :docs => opts.map do |params|
             params       = params.clone
             params[:_id] = params.delete(:id) || Divan::Utils.uuid
+            params[type_field.to_sym] = type_name unless top_level_model?
             params
           end }
           last_request = database.client['_bulk_docs'].post( payload.to_json, :content_type => :json, :accept => :json )

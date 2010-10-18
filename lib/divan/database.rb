@@ -83,10 +83,9 @@ module Divan
     end
 
     def build_model_class
-      Divan::Base.class_eval "class #{model_class_full_name} < Divan::Models::Base ; end"
-      model_class.database = self
-      model_class.name     = name
-      model_class.define_view :all, :map => "function(doc){ if(doc._id.slice(0, 7) != \"_design\"){ emit(null, doc) } }"
+      Divan::Base.class_eval "class #{model_class_full_name} < Divan::Base ; end"
+      model_class.database   = self
+      model_class.top_level_model!
     end
 
     def self.model_class(name)
