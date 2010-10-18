@@ -36,6 +36,8 @@ begin
     gem.homepage = "http://github.com/efqdalton/divan"
     gem.authors = ["Dalton Pinto"]
     gem.files.exclude "config"
+    gem.add_dependency 'json'
+    gem.add_dependency 'rest-client'
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError
