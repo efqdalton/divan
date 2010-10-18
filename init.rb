@@ -5,10 +5,10 @@ require 'restclient'
 require 'json'
 require 'divan.rb'
 
-Divan.load_database_configuration 'config/divan_config.yml'
-
 # Lines below are used for debug purposes only
-class POC < Divan::Models::ProofOfConcept
-  view_by :mod
-  view_by :value
-end
+# Divan.load_database_configuration 'config/divan_config.yml'
+# 
+# class POC < Divan::Models::ProofOfConcept
+#   view_by :mod
+#   view_by :value
+# end
