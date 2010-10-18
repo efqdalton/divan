@@ -1,8 +1,7 @@
-require 'active_model'
+require 'divan/models/base'
 require 'divan/base'
 require 'divan/database'
 require 'divan/utils'
-require 'divan/models/base'
 require 'yaml'
 
 module Divan
