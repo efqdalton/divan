@@ -1,3 +1,8 @@
+divan_path = File.expand_path('../lib', __FILE__)
+$:.unshift(divan_path) if File.directory?(divan_path) && !$:.include?(divan_path)
+
+require 'restclient'
+require 'json'
 require 'divan/models/base'
 require 'divan/base'
 require 'divan/database'
