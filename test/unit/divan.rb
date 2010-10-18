@@ -183,4 +183,16 @@ class TestDivan < Test::Unit::TestCase
     assert_nil object.first_name
     assert_raise(NoMethodError){ object.last_name }
   end
+
+  def test_top_level_model
+    Divan::Models::ProofOfConcept.delete_all
+    ProofOfConcept.create :test => 123
+    Divan::Models::ProofOfConcept.create :test => 456
+    ViewedModel.create :test => 789
+    assert_equal Divan::Models::ProofOfConcept.find_all.count, 3
+    assert_equal ProofOfConcept.find_all.count, 3
+    assert_equal ViewedModel.find_all.count, 1
+    assert_equal ViewedModel.delete_all, 1
+    assert_equal ProofOfConcept.delete_all, 2
+  end
 end

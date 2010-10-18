@@ -6,7 +6,7 @@ module Divan
       opts = opts.clone
       @id  = opts.delete(:id)  || opts.delete(:_id) || Divan::Utils.uuid
       @rev = opts.delete(:rev) || opts.delete(:_rev)
-      @attributes = opts
+      @attributes = opts 
       @attributes[self.class.type_field.to_sym] = self.class.type_name unless self.class.top_level_model?
       self.class.properties.each{ |property| @attributes[property] ||= nil }
     end
@@ -65,7 +65,10 @@ module Divan
         strs = subclass.name.match(/[^:]*\Z/)[0].split(/([A-Z][^A-Z]*)/)
         strs.delete ''
         subclass.model_name = strs.map{ |x| x.downcase }.join('_')
-        subclass.database   = database if database
+        if database
+          subclass.database = database
+          subclass.top_level_model! if subclass.database.name == subclass.model_name
+        end
       end
 
       def type_name
