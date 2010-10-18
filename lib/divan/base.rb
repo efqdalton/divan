@@ -3,9 +3,11 @@ module Divan
     attr_accessor :id, :rev, :attributes, :last_request
 
     def initialize(opts = {})
+      opts = opts.clone
       @id  = opts.delete(:id)  || opts.delete(:_id) || Divan::Utils.uuid
       @rev = opts.delete(:rev) || opts.delete(:_rev)
       @attributes = opts
+      self.class.properties.each{ |property| @attributes[property] ||= nil }
     end
 
     def [](key)
@@ -116,6 +118,14 @@ module Divan
       attr_writer :database, :name
       attr_reader :view_by_params
 
+      def properties(*args)
+        unless @properties
+          @properties = ( superclass.properties.nil? ) ? [] : superclass.properties
+        end
+        @properties.concat args.flatten!
+        @properties
+      end
+
       def database
         @database ||= superclass.database
       end
@@ -143,19 +153,6 @@ module Divan
 
       def find_all(params=nil)
         query_view :all, params
-        # params[:include_docs] ||= true
-        # find_all_path = Divan::Utils.formatted_path :_all_docs, params
-        # last_request = database.client[find_all_path].get
-        # results = JSON.parse last_request, :symbolize_names => true
-        # skipped = 0
-        # result = results[:rows].map do |hash_result|
-        #   if hash_result[:id][0..7] == "_design/"
-        #     skipped += 1
-        #     nil
-        #   else
-        #     self.new(hash_result[:doc])
-        #   end
-        # end.compact
       end
 
       def all
@@ -166,15 +163,6 @@ module Divan
         to_be_deleted = find_all(params).map do |object|
           {:_id => object.id, :_rev => object.rev, :_deleted => true }
         end
-        # find_all_path = Divan::Utils.formatted_path :_all_docs, params
-        # last_request = database.client[find_all_path].get
-        # results = JSON.parse last_request, :symbolize_names => true
-        # skipped = 0
-        # to_be_deleted = results[:rows].map do |hash_result|
-        #   unless hash_result[:id][0..7] == "_design/"
-        #     {:_id => hash_result[:id], :_rev => hash_result[:value][:rev], :_deleted => true }
-        #   end
-        # end.compact
         payload = { :docs => to_be_deleted }.to_json
         database.client['_bulk_docs'].post payload, :content_type => :json, :accept => :json
         to_be_deleted.size
@@ -257,7 +245,11 @@ module Divan
       end
 
       def bulk_create(opts)
-        payload = { :docs => opts.map{ |params| (params[:_id] = params.delete(:id) || Divan::Utils.uuid); params } }.to_json
+        payload = { :docs => opts.map do |params|
+          params       = params.clone
+          params[:_id] = params.delete(:id) || Divan::Utils.uuid)
+          params
+        end.to_json
         last_request = database.client['_bulk_docs'].post( payload, :content_type => :json, :accept => :json )
       end
     end
