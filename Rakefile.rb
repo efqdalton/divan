@@ -13,7 +13,7 @@ end
 task :create_views do
   if ENV['database']
     if ENV['design']
-      Divan[ENV['database'].to_sym].create_views
+      Divan[ENV['design'].to_sym].create_views
     else
       Divan[ENV['database'].to_sym].create_views
     end
