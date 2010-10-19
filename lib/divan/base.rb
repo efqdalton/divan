@@ -136,7 +136,7 @@ module Divan
 
       def define_view_all
         if database && model_name == database.name
-          define_view :all, :map => "function(doc){ if(doc._id.slice(0, 7) != \"_design\"){ emit(null, doc) } }"
+          define_view :all, :map => "function(doc){ if(doc._id[0] != \"_\"){ emit(null, doc) } }"
         else
           define_view :all, :map => "function(doc){ if(doc.#{type_field} == \"#{type_name}\"){ emit(null, doc) } }"
         end        
