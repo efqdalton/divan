@@ -59,7 +59,10 @@ module Divan
     attr_reader :new_document, :current_document
     def initialize(new_document)
       @new_document = new_document
-      @current_document = new_document.class.find new_document.id
+    end
+
+    def current_document
+      @current_document ||= new_document.class.find new_document.id
     end
   end
 end
