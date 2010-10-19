@@ -132,7 +132,6 @@ class TestDivan < Test::Unit::TestCase
     10.times do |n|
       assert ProofOfConcept.new( :value => n ).save
     end
-    # assert_equal Divan[:proof_of_concept].views.count, 5
     assert Divan[:proof_of_concept].create_views
     assert_equal ProofOfConcept.delete_all(:limit => 6), 6
     assert_equal ProofOfConcept.all.first.class, ProofOfConcept
@@ -194,5 +193,42 @@ class TestDivan < Test::Unit::TestCase
     assert_equal ViewedModel.find_all.count, 1
     assert_equal ViewedModel.delete_all, 1
     assert_equal ProofOfConcept.delete_all, 2
+  end
+
+  def test_first_wins_save_strategy
+    first = ProofOfConcept.create :test => 123
+    last  = ProofOfConcept.new :id => first.id, :test => 321
+    assert last.save(:first_wins)
+    assert_equal ProofOfConcept.find(first.id).test, 123
+    assert_equal last.test, 123
+  end
+
+  def test_last_wins_save_strategy
+    first = ProofOfConcept.create :test => 123
+    last  = ProofOfConcept.new :id => first.id, :test => 321
+    assert last.save(:last_wins)
+    assert_equal ProofOfConcept.find(first.id).test, 321
+    assert_equal last.test, 321
+  end
+
+  def test_merge_save_strategy
+    first = ProofOfConcept.create :test_one => 1, :test => 'Working'
+    last  = ProofOfConcept.new :id => first.id, :test_one => 123, :test_two => 321
+    expected_attributes = first.attributes.merge last.attributes
+    assert last.save(:merge)
+    assert_equal ProofOfConcept.find(first.id).attributes, expected_attributes
+    assert_equal last.attributes, expected_attributes
+  end
+
+  def test_custom_save_strategy
+    first = ProofOfConcept.create :amount => 100
+    last  = ProofOfConcept.new :id => first.id, :amount => 200
+    expected_attributes = first.attributes.merge last.attributes
+    assert last.save(){ |here, in_database| here.amount += in_database.amount }
+    assert_equal ProofOfConcept.find(first.id).amount, 300
+    assert_equal last.amount, 300
+    assert first.save(){ |here, in_database| here.amount > in_database.amount }
+    assert_equal ProofOfConcept.find(first.id).amount, 300
+    assert_equal first.amount, 300
   end
 end
