@@ -61,8 +61,8 @@ module Divan
           @last_request = database.client[current_document_path].put save_attrs.to_json
           @rev = JSON.parse(@last_request, :symbolize_names => true )[:rev]
         rescue RestClient::Conflict
-          if methods.include?("#{strategy}_strategy")
-            run_strategy_in_function strategy
+          if strategy && self.class.strategies[strategy.to_sym]
+            run_strategy_in_block &self.class.strategies[strategy.to_sym]
           elsif block_given?
             run_strategy_in_block &block 
           else
@@ -84,25 +84,13 @@ module Divan
 
       def run_strategy_in_block(&block)
         conflict_doc = self.class.find(id)
-        @rev = conflict_doc.rev
+        @rev         = conflict_doc.rev
         if yield(self, conflict_doc)
           self.execute_save(nil, &block)
         else
           @attributes   = conflict_doc.attributes
           @last_request = conflict_doc.last_request
         end
-      end
-
-      def first_wins_strategy(current_document)
-        return false
-      end
-
-      def last_wins_strategy(current_document)
-        return true
-      end
-
-      def merge_strategy(current_document)
-        @attributes = current_document.attributes.merge @attributes
       end
 
       class << self
@@ -144,7 +132,16 @@ module Divan
           end
         end
 
+        def strategies
+          @strategies ||= superclass.respond_to?(:strategies) ? superclass.strategies : {}
+        end
+
         protected
+
+        def strategy(name, &block)
+          @strategies ||= {}
+          @strategies[name.to_sym] = block
+        end
 
         def single_create(opts = {})
           obj = self.new(opts)
@@ -161,8 +158,11 @@ module Divan
           end }
           last_request = database.client['_bulk_docs'].post( payload.to_json, :content_type => :json, :accept => :json )
         end
-
       end
+
+      strategy(:first_wins) { |here, in_database| false }
+      strategy(:last_wins)  { |here, in_database| true }
+      strategy(:merge)      { |here, in_database| here.attributes = in_database.attributes.merge here.attributes }
 
     end
   end

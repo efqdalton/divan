@@ -1,4 +1,4 @@
-divan_path = File.expand_path('../lib', __FILE__)
+divan_path = File.dirname(__FILE__)
 $:.unshift(divan_path) if File.directory?(divan_path) && !$:.include?(divan_path)
 
 require 'restclient'
