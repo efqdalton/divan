@@ -133,14 +133,13 @@ module Divan
         end
 
         def strategies
-          @strategies ||= superclass.respond_to?(:strategies) ? superclass.strategies : {}
+          @strategies ||= superclass.respond_to?(:strategies) ? superclass.strategies.clone : {}
         end
 
         protected
 
         def strategy(name, &block)
-          @strategies ||= {}
-          @strategies[name.to_sym] = block
+          strategies[name.to_sym] = block
         end
 
         def single_create(opts = {})

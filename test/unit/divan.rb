@@ -20,6 +20,8 @@ class ViewedModel < Divan::Models::ProofOfConcept
 end
 
 class ProofOfConcept < Divan::Models::ProofOfConcept
+  strategy(:add_conflicted_field_and_keep_this) { |here, in_db| here.conflict = "conflicted!"}
+
   property :first_name
 end
 
@@ -230,5 +232,16 @@ class TestDivan < Test::Unit::TestCase
     assert first.save(){ |here, in_database| here.amount > in_database.amount }
     assert_equal ProofOfConcept.find(first.id).amount, 300
     assert_equal first.amount, 300
+  end
+
+  def test_named_custom_strategy
+    first = ProofOfConcept.create :test => 123
+    last  = ProofOfConcept.new :id => first.id, :test => 321
+    assert last.save(:add_conflicted_field_and_keep_this)
+    assert_equal ProofOfConcept.find(first.id).test, 321
+    assert_equal last.test, 321
+    assert_equal ProofOfConcept.find(first.id).conflict, 'conflicted!'
+    viewed = ViewedModel.new :id => first.id, :will => 'raise errors'
+    assert_raise(Divan::DocumentConflict){ viewed.save }
   end
 end
