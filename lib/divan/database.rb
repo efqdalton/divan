@@ -30,6 +30,14 @@ module Divan
       end
     end
 
+    def compact
+      begin
+        client['_compact'].post Hash.new, :'content-type' => 'application/json'
+      rescue RestClient::ResourceNotFound
+        raise Divan::DatabaseNotFound.new(self), "Database was not found"
+      end
+    end
+
     def create
       begin
         client.put Hash.new

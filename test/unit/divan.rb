@@ -238,6 +238,16 @@ class TestDivan < Test::Unit::TestCase
     assert_equal first.amount, 300
   end
 
+  def test_finding_an_older_revision
+    older = ProofOfConcept.create :save_counts => 0
+    newer = ProofOfConcept.find older.id
+    newer.save_counts += 1
+    assert newer.save
+    older_back = ProofOfConcept.find older.id, :rev => older.rev
+    assert older_back
+    assert_equal older_back.rev, older.rev
+  end
+
   def test_named_custom_strategy
     first = ProofOfConcept.create :test => 123
     last  = ProofOfConcept.new :id => first.id, :test => 321
