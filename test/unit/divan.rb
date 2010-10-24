@@ -25,6 +25,9 @@ class ProofOfConcept < Divan::Models::ProofOfConcept
   property :first_name
 end
 
+Divan::Models::ProofOfConcept.database.create unless Divan::Models::ProofOfConcept.database.exists?
+Divan::Models::ProofOfConcept.database.create_views
+
 class TestDivan < Test::Unit::TestCase
   def test_dynamic_model
     m = Divan::Model(:teste)
@@ -143,6 +146,7 @@ class TestDivan < Test::Unit::TestCase
   end
 
   def test_bulk_create
+    assert ProofOfConcept.top_level_model?
     assert ProofOfConcept.delete_all
     params = 10.times.map do |n|
       {:number => n, :double => 2*n}

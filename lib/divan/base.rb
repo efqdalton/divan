@@ -66,8 +66,8 @@ module Divan
         strs.delete ''
         subclass.model_name = strs.map{ |x| x.downcase }.join('_')
         if database
+          subclass.top_level_model! if database.name == subclass.model_name
           subclass.database = database
-          subclass.top_level_model! if subclass.database.name == subclass.model_name
         end
       end
 
@@ -85,6 +85,10 @@ module Divan
 
       def top_level_model?
         @top_level_model ||= false
+      end
+
+      def views
+        @views ||= {}
       end
 
       def properties
@@ -129,31 +133,36 @@ module Divan
         @views[param.to_sym] = functions
       end
 
-      def define_view!(param, functions)
-        database.views[model_name] ||= {}
-        database.views[model_name][param.to_sym] = functions
-      end
+      # def define_view!(param, functions)
+      #   database.views[model_name] ||= {}
+      #   database.views[model_name][param.to_sym] = functions
+      # end
 
       def define_view_all
-        if database && model_name == database.name
+        if top_level_model?
           define_view :all, :map => "function(doc){ if(doc._id[0] != \"_\"){ emit(null, doc) } }"
         else
           define_view :all, :map => "function(doc){ if(doc.#{type_field} == \"#{type_name}\"){ emit(null, doc) } }"
-        end        
+        end
       end
 
-      def query_view(view, key=nil, args={}, special={})
-        if key.is_a? Hash
-          special = args
-          args    = key
-        else
-          special = args
-          args    = {:key => key}
+      def query_view(view, args={})
+        args ||= {}
+        args = args.clone
+        [:key, :startkey, :endkey].each do |k|
+          args[k] = args[k].to_json if args[k]
         end
 
-        args = args.inject({}){ |hash,(k,v)| hash[k] = v.to_json; hash }
-        view_path = Divan::Utils.formatted_path "_design/#{model_name}/_view/#{view}", args.merge(special)
-        last_request = database.client[view_path].get
+        if args[:keys]
+          keys = args.delete(:keys).to_json
+          view_path = Divan::Utils.formatted_path "_design/#{model_name}/_view/#{view}", args
+          last_request = database.client[view_path].post keys
+        else
+          args[:key] = nil.to_json if args[:key].nil? && args[:startkey].nil? && args[:endkey].nil?
+          view_path = Divan::Utils.formatted_path "_design/#{model_name}/_view/#{view}", args
+          last_request = database.client[view_path].get
+        end
+
         results = JSON.parse last_request, :symbolize_names => true
         results[:rows].map do |row|
           obj = self.new row[:value]
@@ -162,16 +171,48 @@ module Divan
         end
       end
 
+      # def query_view(view, key=nil, args={}, special={})
+      #   if key.is_a? Hash
+      #     special = args
+      #     args    = key
+      #   else
+      #     special = args
+      #     args    = {:key => key}
+      #   end
+      # 
+      #   args = args.inject({}){ |hash,(k,v)| hash[k] = v.to_json; hash }
+      #   view_path = Divan::Utils.formatted_path "_design/#{model_name}/_view/#{view}", args.merge(special)
+      #   last_request = database.client[view_path].get
+      #   results = JSON.parse last_request, :symbolize_names => true
+      #   results[:rows].map do |row|
+      #     obj = self.new row[:value]
+      #     obj.last_request = last_request 
+      #     obj
+      #   end
+      # end
+
       protected
 
       def view_by(param)
         @view_by_params ||= []
         @view_by_params << param
-        define_view! "by_#{param}", :map => "function(doc) { emit(doc.#{param}, doc) }"
+        if top_level_model?
+          define_view "by_#{param}", :map => "function(doc) { emit(doc.#{param}, doc) }"
+        else
+          define_view "by_#{param}", :map => "function(doc) { if(doc.#{type_field} == \"#{type_name}\"){ emit(doc.#{param}, doc) } }"
+        end
+        # define_view "by_#{param}", :map => "function(doc) { emit(doc.#{param}, doc) }"
         eval <<-end_txt
           class << self
-            def all_by_#{param}(key, args={}, special={})
-              query_view :by_#{param}, key, args, special
+            def all_by_#{param}(args=nil)
+              unless args.is_a? Hash
+                if args.is_a? Array
+                  args = { :keys => args }
+                else
+                  args = { :key => args }
+                end
+              end
+              query_view :by_#{param}, args
             end
 
             def by_#{param}(key)
@@ -179,11 +220,13 @@ module Divan
             end
           end
         end_txt
+        define_views
       end
 
       def define_views
-        database.views[model_name] ||= {}
-        database.views[model_name].merge! @views if @views
+        database.views[model_name] = views
+        # database.views[model_name] ||= {}
+        # database.views[model_name].merge! @views if @views
       end
 
       def undefine_views
