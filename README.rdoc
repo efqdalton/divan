@@ -23,7 +23,7 @@ So you are *insane*! Divan is a comfortable place for you to rest.
   # Acessing HTTP header
   patient.last_request.headers[:content_type]
 
-  # Easy accesso to revisions
+  # Easy access to revisions
   patient.alive = true
   patient.ttl   = 7
   10.times.do
