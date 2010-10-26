@@ -1,0 +1,60 @@
+== Divan, are you insane?
+
+* Do you need to have CouchDB <b>easy access to revisions</b>?
+* *Sometimes* do you need to use just <b>one kind of document per database</b>? And sometimes don't?
+* Do you need to use CouchDB <b>without care about activesupport</b> dependencies?
+* Do you need to access <b>HTTP headers</b> of the request that returned your document object?
+
+So you are *insane*! Divan is a comfortable place for you to rest.
+
+== Look how it's easy!
+
+  # Model class
+  class InsanePerson < Divan::Models::InsanePerson
+    view_by :name
+    view_by :doctor
+  end
+
+  # Simple Usage
+  patient = InsanePeople.new :name => 'Hannibal', :doctor => 'House'
+  patient.problems = ['Sleepness', 'Headache', 'Alucinations']
+  patient.save
+
+  # Acessing HTTP header
+  patient.last_request.headers[:content_type]
+
+  # Easy accesso to revisions
+  patient.alive = true
+  patient.ttl   = 7
+  10.times.do
+    if patient.ttl > 0
+      patient.ttl -= 1
+    else
+      patient.alive = false
+      break
+    end
+    patient.save
+  end
+  patient.revision(2).rollback # Be carefull, he's back!
+
+  # Configuration file
+  insane_person:
+    host:     http://127.0.0.1
+    port:     5984
+    database: insane_person
+
+== FAQ
+
+  1. Why are you not using active_model?
+       Because ActiveModel depends on active_support, and sometimes we want a model library that could
+       be used with Rails 2, or any other project could have conflicted dependencies.
+       ActiveModel is a great library, but it'snt a silver bullet for model libraries.
+  2. Who needs access to HTTP headers?
+       Sometimes it's interesting to know exactly the time that each document is retuned by database,
+       you can do it calling method last_request in each document.
+  3. Why dont you use CouchRest?
+       With CouchRest isn't easy to have access to HTTP headers
+
+== TODO
+
+A better README, documentation and other details

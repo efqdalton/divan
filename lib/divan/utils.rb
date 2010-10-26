@@ -6,6 +6,11 @@ module Divan
       "%04x%04x%04x%04x%04x%06x%06x" % values
     end
 
+    def self.parse_time(string)
+      parsed_time     = Date._parse string
+      Time.gm *[:year, :mon, :mday, :hour, :min, :sec].collect{ |k| parsed_time[k] }
+    end
+
     def self.formatted_path(path = nil, opts = {})
       if opts.empty?
         CGI.escape path.to_s

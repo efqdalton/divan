@@ -38,13 +38,13 @@ module Divan
 
       def revision(index)
         revision!(index)
-      rescue Divan::Divan::DocumentRevisionNotAvailable
+      rescue Divan::DocumentRevisionMissing
         nil
       end
 
       def revision!(index)
-        r = revision_ids.find{ |rev| rev[0..1].to_i == index}
-        r.nil? and raise Divan::Divan::DocumentRevisionNotAvailable.new(self), "Revision with index #{index} missing"
+        r = revision_ids.find{ |rev| rev[0..1].to_i == index }
+        r.nil? and raise Divan::DocumentRevisionMissing.new(self), "Revision with index #{index} missing"
         return self if r == @rev
         self.class.find @id, :rev => r
       end

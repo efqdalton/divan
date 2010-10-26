@@ -1,11 +1,15 @@
 module Divan
   class Base < Models::Base
-    attr_accessor :id, :rev, :attributes, :last_request
+    attr_accessor :id, :rev, :attributes, :meta_attributes, :last_request
 
     def initialize(opts = {})
       opts = opts.clone
       @id  = opts.delete(:id)  || opts.delete(:_id) || Divan::Utils.uuid
       @rev = opts.delete(:rev) || opts.delete(:_rev)
+      @meta_attributes = opts.find_all{ |k,v| k.to_s[0..0] == '_' }.inject({}) do |hash, (key, value)|
+        hash[key.to_s[1..-1].to_sym] = opts.delete key
+        hash
+      end
       @attributes = opts 
       @attributes[self.class.type_field.to_sym] = self.class.type_name unless self.class.top_level_model?
       self.class.properties.each{ |property| @attributes[property] ||= nil }
@@ -67,6 +71,7 @@ module Divan
         subclass.model_name = strs.map{ |x| x.downcase }.join('_')
         if database
           subclass.top_level_model! if database.name == subclass.model_name
+          subclass.define_view_all
           subclass.database = database
         end
       end
@@ -102,7 +107,6 @@ module Divan
       def database=(database)
         undefine_views if( !@database.nil? && @database != database )
         @database = database
-        define_view_all
         define_views
         @database
       end
